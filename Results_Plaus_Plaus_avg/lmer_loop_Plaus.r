@@ -141,7 +141,6 @@ p <- p + scale_color_manual(name="Condition", labels=c("A: Plausible", "B: Mediu
 p <- p + labs(x="Region", y="logRT", title = "Residuals: Plausibility Target + Surprisal Distractor") 
 p <- p + theme(legend.position="bottom", legend.text=element_text(size=7), legend.title=element_text(size=7), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) 
 p 
-
 ggsave("Residuals_Plot.pdf", p, width=4, height=4)
 
 
