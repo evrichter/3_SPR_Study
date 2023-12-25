@@ -54,6 +54,7 @@ for (region in regions)
   region_subset$logRT_per_region <- log(region_subset$ReadingTime)
   
   
+  
   # define and run the linear mixed-effects regression model for the precritical region 
   model_per_region <- lmerTest::lmer(logRT_per_region ~ inverted_scaled_Plaus_per_region + scaled_Surprisaldist_per_region + 
                               (1 + inverted_scaled_Plaus_per_region + scaled_Surprisaldist_per_region | Subject) + 
@@ -103,31 +104,25 @@ for (region in regions)
     #####predict condition A, precritical#####
     region_per_condition <- subset(region_subset, Condition == condition)
     region_per_condition$region_per_condition_Predicted <- predict(model_per_region, newdata = region_per_condition,  type = "response")
+    #exponentiate estimated logRTs to obtain estimated raw RTs for comparison with observed raw RTs
+    region_per_condition$region_per_condition_Predicted_exp <- exp(region_per_condition$region_per_condition_Predicted)
+
+    # calculate residuals (raw observed RTs - raw estimated RTs)
+    Residual_region_per_condition <- mean(region_per_condition$ReadingTime) - mean(region_per_condition$region_per_condition_Predicted_exp)
     
-    # calculate residuals
-    Residual_region_per_condition <- mean(region_per_condition$logRT_per_region) - mean(region_per_condition$region_per_condition_Predicted)
-    Residual_region_per_condition
-    # observed RT for condition A precritical
-    region_per_condition_logRT_observed <- mean(region_per_condition$logRT_per_region)
-   # if (condition == "C") 
-   #  {
-   #  print(region_per_condition_logRT_observed)
-   # }
-    # estimated RT for condition A precritical
-    region_per_condition_logRT_estimated <- mean(region_per_condition$region_per_condition_Predicted)
-    region_per_condition_logRT_estimated
+    # estimated RT for each condition per region
+    region_per_condition_RT_estimated <- mean(region_per_condition$region_per_condition_Predicted_exp)
     
     # calculate standard error for residuals
-    SE_residuals_region_per_condition <- sqrt(sd(region_per_condition$logRT_per_region, na.rm = TRUE)^2/length(region_per_condition$logRT_per_region) + sd(region_per_condition$region_per_condition_Predicted, na.rm = TRUE)^2/length(region_per_condition$region_per_condition_Predicted))
+    SE_residuals_region_per_condition <- sqrt(sd(region_per_condition$ReadingTime, na.rm = TRUE)^2/length(region_per_condition$ReadingTime) + sd(region_per_condition$region_per_condition_Predicted_exp, na.rm = TRUE)^2/length(region_per_condition$region_per_condition_Predicted_exp))
     
     new_row_residuals <- data.frame(Region = region, Condition = condition, Residual = Residual_region_per_condition, SE_Residual = SE_residuals_region_per_condition)
     residuals <- rbind(residuals, new_row_residuals)
     
     # calculate standard error for logRT estimated
-    ##
-    SE_estimated_region_per_condition <- sd(region_per_condition$region_per_condition_Predicted, na.rm = TRUE) / sqrt(length(region_per_condition$region_per_condition_Predicted)) 
+    SE_estimated_region_per_condition <- sd(region_per_condition$region_per_condition_Predicted_exp, na.rm = TRUE) / sqrt(length(region_per_condition$region_per_condition_Predicted_exp)) 
     
-    new_row_logRT_estimated <- data.frame(Region = region, Condition = condition, Estimated_logRT = region_per_condition_logRT_estimated, SE_Estimated = SE_estimated_region_per_condition)
+    new_row_logRT_estimated <- data.frame(Region = region, Condition = condition, Estimated_logRT = region_per_condition_RT_estimated, SE_Estimated = SE_estimated_region_per_condition)
     logRT_estimated <- rbind(logRT_estimated, new_row_logRT_estimated)
   }
 }
@@ -135,10 +130,10 @@ for (region in regions)
 # plot residuals
 # Create a line plot 
 p <- ggplot(residuals, aes(x = factor(Region, levels = c("Pre-critical", "Critical", "Spillover", "Post-spillover")), 
-                           y = Residual, color = Condition, group = Condition)) + geom_point(shape = 4, size = 3.5, stroke = 0.4) + geom_line(linewidth=0.5) + ylim (0.10, -0.10)
+                           y = Residual, color = Condition, group = Condition)) + geom_point(shape = 4, size = 3.5, stroke = 0.4) + geom_line(linewidth=0.5) + ylim (-10, 30)
 p <- p + theme_minimal() + geom_errorbar(aes(ymin=Residual-SE_Residual, ymax=Residual+SE_Residual), width=.1, size=0.3) 
 p <- p + scale_color_manual(name="Condition", labels=c("A: Plausible", "B: Medium Plausible", "C: Implausible"), values=c("#000000", "#FF0000", "#0000FF"))
-p <- p + labs(x="Region", y="logRT", title = "Residuals") 
+p <- p + labs(x="Region", y="expRT", title = "Residuals") 
 p <- p + theme(legend.position="bottom", legend.text=element_text(size=7), legend.title=element_text(size=7), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) 
 p 
 
@@ -148,10 +143,10 @@ ggsave("Residuals_Plot.pdf", p, width=4, height=4)
 # plot estimated logRTs
 # Create a line plot 
 p <- ggplot(logRT_estimated, aes(x = factor(Region, levels = c("Pre-critical", "Critical", "Spillover", "Post-spillover")), 
-                                 y = Estimated_logRT, color = Condition, group = Condition)) + geom_point(shape = 4, size = 3.5, stroke = 0.4) + geom_line(linewidth=0.5) + ylim (5.5, 5.7)
+                                 y = Estimated_logRT, color = Condition, group = Condition)) + geom_point(shape = 4, size = 3.5, stroke = 0.4) + geom_line(linewidth=0.5) + ylim (250, 320)
 p <- p + theme_minimal() + geom_errorbar(aes(ymin=Estimated_logRT-SE_Estimated, ymax=Estimated_logRT+SE_Estimated), width=.1, size=0.3) 
 p <- p + scale_color_manual(name="Condition", labels=c("A: Plausible", "B: Medium Plausible", "C: Implausible"), values=c("#000000", "#FF0000", "#0000FF"))
-p <- p + labs(x="Region", y="logRT", title = "Estimated RTs") 
+p <- p + labs(x="Region", y="expRT", title = "Estimated RTs") 
 p <- p + theme(legend.position="bottom", legend.text=element_text(size=7), legend.title=element_text(size=7), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14)) 
 p 
 ggsave("Estimated_RTs_Plot.pdf", p, width=4, height=4)
