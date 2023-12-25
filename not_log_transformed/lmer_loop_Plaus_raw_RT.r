@@ -5,7 +5,7 @@ library(lmerTest)
 library(dplyr)
 library(ggplot2)
 
-setwd("~/Downloads/Master_Thesis/3_SPR_Study/Results_Plaus_Plaus_avg/")
+setwd("~/Downloads/Master_Thesis/3_SPR_Study/not_log_transformed/")
 GP6 <- read.csv("GP6SPR_processed.csv")
 
 residuals <- data.frame(

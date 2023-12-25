@@ -8,8 +8,8 @@ library(data.table)
 library(gridExtra)
 library(dplyr)
 
-setwd("~/Downloads/Master_Thesis/3_SPR_Study/SPR_single_not_log_transformed/")
-source("ibex_fns.r")
+setwd("~/Downloads/Master_Thesis/3_SPR_Study/not_log_transformed/")
+source("ibex_fns_not_log_transformed.r")
 
 
 #### DATA FORMATTING
